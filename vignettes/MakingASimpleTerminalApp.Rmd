@@ -1,0 +1,124 @@
+---
+title: "Creating a Simple Terminal Application"
+author: "Christopher Mann"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Creating a Simple Terminal Application}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Let us walk through the creation of a very simple terminal application using the `cursr` package. This application will print a box to the screen with a welcome message, then request a letter and number. Finally, it will return some other number back to the user. We will wrap the results into a final function. You can see this application in action by calling the `example_luckynumber()` function.
+
+First, let us clear the screen. We also don't want an ugly cursor blinking in the program. So let us hide it. This is straightforward in `cursr`; just call the `clear` and `hide_cursor` functions.
+
+```{r eval=FALSE}
+clear()
+hide_cursor()
+```
+
+Next, let use draw a blue box around the entire screen. We will need to know the dimensions of the screen to do this. The `term_dim` function returns the number of rows and columns of the screen as a numeric vector. These can be fed into the `box_at` function to draw a box that fills the entire screen. Since we want this to be blue, we need to specify the fill character to be `" "` *(blank)*, and the background fill color to be `"blue"`. If no fill character is specified, then the box will not be filled with any color.
+
+```{r eval=FALSE}
+dimensions <- term_dim()
+box_at(yx=c(1,1), dim=dimensions, fill=" ", fill.bg="blue")
+```
+
+Technically, we did not have to clear the screen earlier since we are writing over everything with the blue box. 
+
+Next, need a title that will display at the top. We will want it to be in the center of the screen. We can use the `wrat` command to write text to the screen at a specific location. Let us place the title on row 3 since the first row contains the box edge and we likely want some space between the title and the top. To place the text in the center of the row, we split the left-over space *(total columns - number of characters in the text)* in two, then use `floor` to make sure it is a whole number.
+
+```{r eval=FALSE}
+text <- "Find Your LUCKY NUMBER!"
+yx   <- c(3, floor((dimensions[2] - nchar(text))/2))
+wrat(yx, text)
+```
+
+Since no background color was specified, the background of the title is the same as the default color of the terminal. Now, let us make sure that the background color of all of our future text is the same as the fill color of the box. We can turn `bg_on` and `fg_on` to the specified values. 
+
+```{r eval=FALSE}
+bg_on("blue")
+fg_on("white")
+```
+
+If we set the color of a specific text using a writing command, the color will return back to the default values. If so, we will need to turn the colors on again.
+
+Now, let us ask questions and receive input from the user of the app. One strategy is to use the `readline` command in base. This requires that the user type enter after submitting commands. To detect a keypress, we can use the `getkp` cammand in `cursr`. This wraps the function from the `keypress` package to allow the key to be echoed to screen if desired and the keypress to be mapped to a function. The commands below print the message to the screen then wait for a keypress. The keypress is saved and echoed to the screen.
+
+```{r eval=FALSE}
+wrat(c(5,3), "What is your favorite letter?  ")
+lett <- getkp(echo=TRUE)
+
+wrat(c(7,3), "What is your favorite number?  ")
+numb <- getkp(echo=TRUE)
+```
+
+Finally, we manipulate the results to print a random number to the screen that is based on the input. We will color the result red and make it bold to stand out from the other text. 
+
+```{r eval=FALSE}
+result <- which(letters == tolower(lett))*as.integer(numb)+sample(-10:10, 1)
+wrat(c(9,3), "Your lucky number is ...")
+wrat(c(10,10), result, fg = "red", attr="bf")
+```
+
+The simple application is almost done, but if we stop it now the user may not see the results. So let us wait for a keypress from the user.
+
+```{r eval=FALSE}
+wrat(c(14,3), "Press ANY Key to Quit.")
+getkp()
+```
+
+Finally, we finish the program with the `wrapup` function. This resets all text colors and attributes to the terminal's default values, clears the screen, and shows the cursor.
+
+```{r eval=FALSE}
+wrapup()
+```
+
+Our final function:
+
+```{r}
+example_luckynumber <- function(){
+  clear()
+  hide_cursor()
+  
+  dimensions <- term_dim()
+  box_at(yx=c(1,1), dim=dimensions, fill=" ", fill.bg="blue")
+  
+  text <- "Find Your LUCKY NUMBER!"
+  yx   <- c(3, floor((dimensions[2] - nchar(text))/2))
+  wrat(yx, text)
+  
+  bg_on("blue")
+  fg_on("white")
+  
+  wrat(c(5,3), "What is your favorite letter?  ")
+  lett <- getkp(echo=TRUE)
+  
+  wrat(c(7,3), "What is your favorite number?  ")
+  numb <- getkp(echo=TRUE)
+  
+  result <- which(letters == tolower(lett))*as.integer(numb)+sample(-10:10, 1)
+  wrat(c(9,3), "Your lucky number is ...")
+  wrat(c(10,10), result, fg = "red", attr="bf")
+  
+  wrat(c(14,3), "Press ANY Key to Quit.")
+  getkp()
+  
+  wrapup() 
+}
+```
+
+
+
+
+
+
+

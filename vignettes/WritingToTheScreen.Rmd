@@ -1,0 +1,108 @@
+---
+title: "Writing to the Screen"
+author: "Christopher Mann"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Writing to the Screen}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(cursr)
+```
+
+The `cursr` package provides a set of tools for manipulating the cursor so that users have fine control over what items are printed to screen and where. `cursr`aims to help users to create terminal applications, visualize simulations and agent-based models, create animations in the terminal, and create simple games. 
+
+Many of the tools in the package, including cursor movement, cannot be used within the RStudio Console *(though should work in the RStudio Terminal)*, the R GUI, or any other R applications outside of the terminal.
+
+## Moving Around the Screen
+
+First, let us look how to move the cursor. There are two main functions that do this: `mv` and `mv_to`. Both functions accept two arguments *(though the arguments can be passed as a single vector of length 2)*: a row value and a column value. Row values are always listed before column values and the top left corner of the screen has a coordinate of `(1,1)`.  Notation is similar to matrix notation.
+
+The picture below represents the coordinates along a 8x16 screen. The cursor is represented by the `"X"` and is located at `(1,3)`. The `"Z"` block is located at `(6,9)`.
+
+```{r echo=FALSE}
+top <- "+----------------+"
+row <- "|                |"
+rw1 <- "|  X             |"
+rw2 <- "|        Z       |"
+cat(top, rw1, row, row, row, row, rw2, row, row,top, sep="\n")
+```
+
+  
+The simplest way to move the cursor to the `Z` block is to use `mv_to(row, col)` to move to an absolute position. 
+
+```{r eval=FALSE}
+library(cursr)
+mv_to(6, 9)
+
+# OR ...
+
+new_location <- c(6,9)
+mv_to(new_location)
+```
+
+Alternatively, we could move the cursor relative to its current position. This would require moving down 5 rows and over 6 columns. The `mv(row, col)` command moves the cursor relative to its current position. If a value is omitted, it is treated as 0.
+
+```{r eval=FALSE}
+mv(5, 6)
+```
+
+We have to be careful with `mv`. When entered directly into the console, the cursor immediately move down one row and to the first column. So, the new position would be `(7,2)` instead of `(6,4)`. Furthermore, the cursor will be moved to the right two places as soon as the prompt `>` appears.
+
+Note, that `mv` should work correctly when used within the body of a function instead of being entered directly into the prompt. Also, `term_dim()` can be used to determine the size of the screen.
+ 
+
+## Writing to the Screen
+
+The two main functions to write to the screen are `wr` and `wrat`. `wr` echoes the character string at the current cursor position. `wrat` writes the character string at a particular position, using the same coordinate style mentioned previously.
+
+
+```{r eval=FALSE}
+mv_to(1,3)
+wr("Hello")
+
+wrat(6,9, "World")
+```
+
+
+```{r echo=FALSE}
+top <- "+----------------+"
+row <- "|                |"
+rw1 <- "|  Hello         |"
+rw2 <- "|        World   |"
+cat(top, rw1, row, row, row, row, rw2, row, row,top, sep="\n")
+```
+
+The `cursr` package contains a variety of functions for drawing lines, boxes, arcs, circles, and curves to the screen as well. The functions are prefixed with `draw_`. See the `cursr` manual for more details.
+
+
+## Color and Attributes
+
+All of the writing and drawing functions in the `cursr` package accept three different parameters to influence their style: foreground color `"fg"`, background color `"bg"`, and other attributes `"attr"`.
+
+Colors can be specified in a number of different ways. The color name can be used for basic colors. Hexademical color codes, 256 color codes, and RGB values are also accepted. For example, we can change the foreground color to be red with any of the following commands.
+
+```{r eval=FALSE}
+# Change foreground color to be "red" with any of the following
+fg_on("red")
+fg_on("#FF0000")
+fg_on(9)
+fg_on(255, 0, 0)
+
+# Return foreground color to default
+fg_off()
+```
+
+Attributes are specified using 2-letter character values similar to their LaTeX abbreviations: `"bf"` for bold, `"it"` for italics, etc.
+
+Each of these can be used separately via functions such as `bg_on()` and `attr_on()`, or they can be combined with other functions such as below.
+
+```{r eval=FALSE}
+# Write at cursor in bold, blue on red background
+wr("Hello World!", bg="red", fg="blue", attr="bf")
+```
+
+
